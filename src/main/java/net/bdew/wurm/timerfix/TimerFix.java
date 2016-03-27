@@ -20,7 +20,7 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
     private static final Logger logger = Logger.getLogger("TimerFix");
 
     enum Patches {
-        FLATTEN, SPELLS, DESTROY, PRAY, SACRIFICE, SOW, MEDITATE, ALCHEMY, MISC
+        FLATTEN, SPELLS, DESTROY, PRAY, SACRIFICE, SOW, MEDITATE, ALCHEMY, IMPROVE, MISC
     }
 
     static EnumSet<Patches> enabledPatches = EnumSet.noneOf(Patches.class);
@@ -198,6 +198,18 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
                         "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Action;F)Z",
                         false, true, false
                 );
+            }
+
+            if (enabledPatches.contains(Patches.IMPROVE)) {
+                classPool.getCtClass("com.wurmonline.server.behaviours.Actions").getMethod("getImproveActionTime", "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;)I").instrument(new ExprEditor() {
+                    @Override
+                    public void edit(MethodCall m) throws CannotCompileException {
+                        if (m.getMethodName().equals("max")) {
+                            m.replace("if ($1 == 50.0) $_=$2; else $_=$proceed($1,$2);");
+                            logInfo("Removed hard speed cap for enchanted tools in " + m.where().getDeclaringClass().getName() + " " + m.where().getMethodInfo().getName() + " " + m.getLineNumber());
+                        }
+                    }
+                });
             }
 
             if (enabledPatches.contains(Patches.MISC)) {
