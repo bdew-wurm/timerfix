@@ -42,7 +42,7 @@ public class FlattenPatcher {
         newCode.addFload(counterVar);
         newCode.addIload(typeVar);
         newCode.addIconst(first ? 1 : 0);
-        newCode.addInvokestatic("net.bdew.wurm.timerfix.FlattenHook", "shouldTick", "(Lcom/wurmonline/server/behaviours/Action;ZFBZ)Z");
+        newCode.addInvokestatic("net.bdew.wurm.timerfix.TimerHooks", "shouldFlattenTick", "(Lcom/wurmonline/server/behaviours/Action;ZFBZ)Z");
 
         // jump to the original end if false
         newCode.add(Bytecode.IFEQ);

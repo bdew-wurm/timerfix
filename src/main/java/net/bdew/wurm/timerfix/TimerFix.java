@@ -6,16 +6,19 @@ import javassist.NotFoundException;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
-import org.gotti.wurmunlimited.modloader.interfaces.Initable;
-import org.gotti.wurmunlimited.modloader.interfaces.PreInitable;
-import org.gotti.wurmunlimited.modloader.interfaces.ServerStartedListener;
-import org.gotti.wurmunlimited.modloader.interfaces.WurmMod;
+import org.gotti.wurmunlimited.modloader.interfaces.*;
 
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedListener {
+public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedListener, Configurable {
     private static final Logger logger = Logger.getLogger("TimerFix");
+
+    static Set<String> spellBlacklist = new HashSet<>();
+    static int minSpellTimer = 2;
 
     public static void logException(String msg, Throwable e) {
         if (logger != null)
@@ -32,6 +35,24 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
             logger.log(Level.INFO, msg);
     }
 
+    static String sanitizeSpellName(String name) {
+        return name.toLowerCase().replaceAll("[^A-Za-z0-9]", "");
+    }
+
+    @Override
+    public void configure(Properties properties) {
+        String spells = properties.getProperty("spellBlacklist", "").trim();
+        if (spells.indexOf(",") > 0) {
+            for (String name : spells.split(","))
+                spellBlacklist.add(sanitizeSpellName(name));
+        } else if (spells.length() > 0) {
+            spellBlacklist.add(sanitizeSpellName(spells));
+        }
+        logInfo("Spell blacklist: " + String.join(",", spellBlacklist));
+
+        minSpellTimer = Integer.parseInt(properties.getProperty("minSpellTimer", "2"));
+        logInfo("minSpellTimer: " + minSpellTimer);
+    }
 
     private static void applyEdit(ClassPool cp, String cls, String method, String descr, boolean sendActionControlPatch, boolean setTimeLeftPatch, boolean getCounterAsFloatPatch) throws NotFoundException, CannotCompileException {
         cp.getCtClass(cls).getMethod(method, descr).instrument(new ExprEditor() {
@@ -235,7 +256,7 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
             });
 
             classPool.getCtClass("com.wurmonline.server.spells.Spell").getMethod("getCastingTime", "(Lcom/wurmonline/server/creatures/Creature;)I").insertAfter(
-                    "return java.lang.Math.max((int)($_ / com.wurmonline.server.Servers.localServer.getActionTimer()), 2);"
+                    "return net.bdew.wurm.timerfix.TimerHooks.getCastingTime(this, $_);"
             );
 
         } catch (Throwable e) {
