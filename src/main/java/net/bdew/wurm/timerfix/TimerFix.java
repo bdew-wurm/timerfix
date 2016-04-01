@@ -27,6 +27,7 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
 
     static Set<String> spellBlacklist = new HashSet<>();
     static int minSpellTimer = 2;
+    static int minPickTimer = 0;
 
     public static void logException(String msg, Throwable e) {
         if (logger != null)
@@ -69,6 +70,9 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
 
         minSpellTimer = Integer.parseInt(properties.getProperty("minSpellTimer", "2"));
         logInfo("minSpellTimer: " + minSpellTimer);
+
+        minPickTimer = Integer.parseInt(properties.getProperty("minPickTimer", "0"));
+        logInfo("minPickTimer: " + (minPickTimer > 0 ? minPickTimer : "disabled"));
     }
 
     private static void applyEdit(ClassPool cp, String cls, String method, String descr, boolean sendActionControlPatch, boolean setTimeLeftPatch, boolean getCounterAsFloatPatch) throws NotFoundException, CannotCompileException {
@@ -301,6 +305,12 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
             if (enabledPatches.contains(Patches.SPELLS)) {
                 classPool.getCtClass("com.wurmonline.server.spells.Spell").getMethod("getCastingTime", "(Lcom/wurmonline/server/creatures/Creature;)I").insertAfter(
                         "return net.bdew.wurm.timerfix.TimerHooks.getCastingTime(this, $_);"
+                );
+            }
+
+            if (minPickTimer > 0) {
+                classPool.getCtClass("com.wurmonline.server.behaviours.Actions").getMethod("getPickActionTime", "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/skills/Skill;Lcom/wurmonline/server/items/Item;D)I").insertAfter(
+                        "return Math.max($_, " + minPickTimer + "*10);"
                 );
             }
 
