@@ -20,7 +20,7 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
     private static final Logger logger = Logger.getLogger("TimerFix");
 
     enum Patches {
-        FLATTEN, SPELLS, DESTROY, PRAY, SACRIFICE, SOW, MEDITATE, ALCHEMY, IMPROVE, FORAGE, MISC
+        FLATTEN, SPELLS, DESTROY, PRAY, SACRIFICE, SOW, MEDITATE, ALCHEMY, IMPROVE, FORAGE, BREED, MISC
     }
 
     static EnumSet<Patches> enabledPatches = EnumSet.noneOf(Patches.class);
@@ -339,8 +339,24 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
 
     @Override
     public void preInit() {
-        if (enabledPatches.contains(Patches.FLATTEN)) {
-            FlattenPatcher.patchFlatten();
+        try {
+            ClassPool classPool = HookManager.getInstance().getClassPool();
+
+            if (enabledPatches.contains(Patches.FLATTEN)) {
+                FlattenPatcher.patchFlatten(classPool);
+            }
+
+            if (enabledPatches.contains(Patches.BREED)) {
+                applyEdit(
+                        classPool,
+                        "com.wurmonline.server.behaviours.MethodsCreatures",
+                        "breed",
+                        "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/creatures/Creature;SLcom/wurmonline/server/behaviours/Action;F)Z",
+                        true, true, false
+                );
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
     }
 

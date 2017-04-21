@@ -4,16 +4,14 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.bytecode.*;
-import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 
 import java.util.logging.Logger;
 
 public class FlattenPatcher {
     private static final Logger logger = Logger.getLogger("FlattenPatcher");
 
-    public static void patchFlatten() {
+    public static void patchFlatten(ClassPool classPool) {
         try {
-            ClassPool classPool = HookManager.getInstance().getClassPool();
             CtClass ctFlattening = classPool.getCtClass("com.wurmonline.server.behaviours.Flattening");
             CtMethod ctFlatten = ctFlattening.getMethod("flatten", "(JLcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;IIIIIIFLcom/wurmonline/server/behaviours/Action;)Z");
 
