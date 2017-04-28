@@ -28,6 +28,7 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
     static Set<String> spellBlacklist = new HashSet<>();
     static int minSpellTimer = 2;
     static int minPickTimer = 0;
+    static int minBreedTimer = 0;
 
     public static void logException(String msg, Throwable e) {
         if (logger != null)
@@ -73,20 +74,28 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
 
         minPickTimer = Integer.parseInt(properties.getProperty("minPickTimer", "0"));
         logInfo("minPickTimer: " + (minPickTimer > 0 ? minPickTimer : "disabled"));
+
+        minBreedTimer = Integer.parseInt(properties.getProperty("minBreedTimer", "0"));
+        logInfo("minBreedTimer: " + (minBreedTimer > 0 ? minBreedTimer : "disabled"));
     }
 
     private static void applyEdit(ClassPool cp, String cls, String method, String descr, boolean sendActionControlPatch, boolean setTimeLeftPatch, boolean getCounterAsFloatPatch) throws NotFoundException, CannotCompileException {
+        applyEdit(cp, cls, method, descr, sendActionControlPatch, setTimeLeftPatch, getCounterAsFloatPatch, 0);
+    }
+
+
+    private static void applyEdit(ClassPool cp, String cls, String method, String descr, boolean sendActionControlPatch, boolean setTimeLeftPatch, boolean getCounterAsFloatPatch, int minCap) throws NotFoundException, CannotCompileException {
         cp.getCtClass(cls).getMethod(method, descr).instrument(new ExprEditor() {
             @Override
             public void edit(MethodCall m) throws CannotCompileException {
                 if (sendActionControlPatch && m.getMethodName().equals("sendActionControl")) {
-                    m.replace("$proceed($1,$2,(int)($3/com.wurmonline.server.Servers.localServer.getActionTimer()));");
+                    m.replace("$proceed($1,$2,java.lang.Math.max((int)($3/com.wurmonline.server.Servers.localServer.getActionTimer()), " + minCap + "));");
                     logInfo("Applied timer fix to sendActionControl in " + m.where().getDeclaringClass().getName() + " " + m.where().getMethodInfo().getName() + " " + m.getLineNumber());
                 } else if (setTimeLeftPatch && m.getMethodName().equals("setTimeLeft")) {
-                    m.replace("$proceed((int)($1/com.wurmonline.server.Servers.localServer.getActionTimer()));");
+                    m.replace("$proceed(java.lang.Math.max((int)($1/com.wurmonline.server.Servers.localServer.getActionTimer()), " + minCap + "));");
                     logInfo("Applied timer fix to setTimeLeft in " + m.where().getDeclaringClass().getName() + " " + m.where().getMethodInfo().getName() + " " + m.getLineNumber());
                 } else if (getCounterAsFloatPatch && m.getMethodName().equals("getCounterAsFloat")) {
-                    m.replace("$_ = $proceed() * com.wurmonline.server.Servers.localServer.getActionTimer();");
+                    m.replace("$_ = java.lang.Math.max($proceed() * com.wurmonline.server.Servers.localServer.getActionTimer(), " + minCap + "f);");
                     logInfo("Applied timer fix to getCounterAsFloat in " + m.where().getDeclaringClass().getName() + " " + m.where().getMethodInfo().getName() + " " + m.getLineNumber());
                 }
             }
@@ -352,7 +361,7 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
                         "com.wurmonline.server.behaviours.MethodsCreatures",
                         "breed",
                         "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/creatures/Creature;SLcom/wurmonline/server/behaviours/Action;F)Z",
-                        true, true, false
+                        true, true, false, minBreedTimer * 10
                 );
             }
         } catch (Throwable e) {
