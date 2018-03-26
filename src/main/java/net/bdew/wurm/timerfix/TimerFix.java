@@ -271,7 +271,7 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
                         classPool,
                         "com.wurmonline.server.behaviours.MethodsItems",
                         "colorItem",
-                        "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Action;)Z",
+                        "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Action;Z)Z",
                         true, true, false
                 );
 
@@ -288,7 +288,7 @@ public class TimerFix implements WurmMod, Initable, PreInitable, ServerStartedLi
                         classPool,
                         "com.wurmonline.server.behaviours.MethodsItems",
                         "removeColor",
-                        "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Action;)Z",
+                        "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Action;Z)Z",
                         true, true, false
                 );
 
